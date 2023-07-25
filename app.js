@@ -1,5 +1,4 @@
 let express = require("express");
-let { carMaster, cars } = require("./carData");
 let app = express();
 app.use(express.json());
 app.use(function (req, res, next) {
