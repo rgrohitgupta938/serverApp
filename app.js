@@ -1,5 +1,4 @@
 let express = require("express");
-let { carMaster, cars } = require("./carData");
 let app = express();
 app.use(express.json());
 app.use(function (req, res, next) {
@@ -16,84 +15,75 @@ app.use(function (req, res, next) {
 });
 var port = process.env.PORT || 2410;
 app.listen(port, () => console.log(`Node app listening on port ${port}`));
-app.get("/cars", function (req, res) {
-    let minprice = req.query.minprice;
-    let maxprice = req.query.maxprice;
-    let fuel = req.query.fuel;
-    let type = req.query.type;
-    let sort = req.query.sort;
-    let arr1 = cars;
-    if(minprice){
-        arr1 = arr1.filter((ar) => ar.price >= +minprice)
-    }
-    if(maxprice){
-        arr1 = arr1.filter((ar) => ar.price <= +maxprice)
-    }
-    if (fuel) {
-        arr1 = arr1.filter((cr) => {
-          return carMaster.find((st) => st.model === cr.model && st.fuel === fuel);
-        });
-      }
-    if(type){
-        arr1 = arr1.filter((cr) => {
-            return carMaster.find((st) => st.model === cr.model && st.type === type);
-          });
-    }
-    if(sort){
-        sort === "kms" ? arr1.sort((p1,p2) => +p1.kms - +p2.kms) : arr1;
-        sort === "price" ? arr1.sort((p1,p2) => +p1.price - +p2.price) : arr1;
-        sort === "year" ? arr1.sort((p1,p2) => +p1.year - +p2.year) : arr1;
-    }
-    console.log(arr1);
-    res.send(arr1);
+let { studentsData } = require("./studentData");
+app.get("/svr/test", function (req, res) {
+  res.send("test Response 567889");
 });
-app.post("/cars",function(req,res){
-    let body = req.body;
-    let st = cars.findIndex((t) => t.id === body.id);
-    console.log(st,body);
-    if( st <0){
-        cars.push(body);
-        console.log(body);
-        res.send(body);
-    }
-    else{
-        res.send("Id already Exist");
-    }
+app.get("/svr/students", function (req, res) {
+  let courseStr = req.query.course;
+  let grade = req.query.grade;
+  let sort = req.query.sort;
+  let arr1 = studentsData;
+  if (courseStr) {
+    let courseArr = courseStr.split(",");
+    arr1 = arr1.filter((st) => courseArr.find((cr) => cr === st.course));
+  }
+  if (grade) {
+    arr1 = arr1.filter((st) => st.grade === grade);
+  }
+  if (sort === "name") {
+    arr1.sort((p1, p2) => p1.name.localeCompare(p2.name));
+  }
+  if (sort === "course") {
+    arr1.sort((p1, p2) => p1.course.localeCompare(p2.course));
+  }
+  res.send(arr1);
 });
-app.get("/cars/:id",function(req,res){
-    let id = req.params.id;
-    let arr1 = cars.find((cr) => cr.id === id);
-    if(arr1){
-        res.send(arr1);
-    }
-    else{
-        res.status(404).send("Car Not Found");
-    }
+app.get("/svr/students/:id", function (req, res) {
+  let id = req.params.id;
+  let students = studentsData.find((st) => st.id === +id);
+  if (students) {
+    res.send(students);
+  } else {
+    res.status(404).send("No student found");
+  }
 });
-app.put("/cars/:id",function(req,res){
-    let id = req.params.id;
-    let body = req.body;
-    let arr1 =  cars.findIndex((st) => st.id === id);
-    if(arr1 >=0){
-        let updated = {id:id,...body};
-        cars[arr1] = updated;
-        res.send(updated);
-    }
-    else{
-        res.status(404).send("Cart not found");
-    }
+app.get("/svr/students/course/:name", function (req, res) {
+  let name = req.params.name;
+  let students = studentsData.filter((st) => st.course === name);
+  res.send(students);
 });
-app.delete("/cars/:id",function(req,res){
-    let id = req.params.id;
-    let st = cars.findIndex((st) => st.id === id);
-    if(st < 0){
-        res.status(404).send("car not found");
-    }else{
-        let delCar = cars.splice(st,1);
-        res.send(delCar);
-    }
+app.post("/svr/students", function (req, res) {
+  let body = req.body;
+  console.log(body);
+  let maxid = studentsData.reduce(
+    (acc, curr) => (curr.id >= acc ? curr.id : acc),
+    0
+  );
+  let newid = maxid + 1;
+  let newStudent = { id: newid, ...body };
+  studentsData.push(newStudent);
+  res.send(newStudent);
 });
-app.get("/carmaster",function(req,res){
-    console.log(carMaster);
-    res.send(carMaster);
+app.put("/svr/students/:id", function (req, res) {
+  let id = +req.params.id;
+  let body = req.body;
+  let inx = studentsData.findIndex((st) => st.id === id);
+  if (inx >= 0) {
+    let updateStu = { id: id, ...body };
+    studentsData[inx] = updateStu;
+    res.send(updateStu);
+  }
+  else{
+    res.status(404).send("No student Found");
+  }
+});
+app.delete("/svr/students/:id",function(req,res){
+  let id = req.params.id;
+  let inx = studentsData.findIndex((st) => st.id === +id);
+  if(inx>=0){
+    let deletedStudent = studentsData.splice(inx,1);
+    res.send(deletedStudent);
+  }else res.status(404).send("No Student Found");
+  
 })
